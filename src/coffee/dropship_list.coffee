@@ -67,10 +67,20 @@ class DropshipList
   #   removed; the callback argument is true if an error occurred
   # @return {DropshipList} this
   removeFileState: (file, callback) ->
+    @removeFileStates [file], callback
+
+  # Removes the metadata for a set of files.
+  #
+  # @param {Array<DropshipFile>} files the files to be removed
+  # @param {function(Boolean)} callback called when the file's data is
+  #   removed; the callback argument is true if an error occurred
+  # @return {DropshipList} this
+  removeFileStates: (files, callback) ->
     @db (db) =>
       transaction = db.transaction 'metadata', 'readwrite'
       metadataStore = transaction.objectStore 'metadata'
-      request = metadataStore.delete file.uid
+      for file in files
+        request = metadataStore.delete file.uid
       transaction.oncomplete = =>
         delete @_files[file.uid]
         callback false
