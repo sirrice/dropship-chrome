@@ -16,12 +16,19 @@
     "default_title": "Starting..."
   },
   "minimum_chrome_version": "24",
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["js/folder_contentscript.js"]
+    }
+  ],
   "permissions": [
     "<all_urls>",
 
     "chrome://favicon/",
     "contextMenus",
     "notifications",
+    "tabs",
     "storage",
     "unlimitedStorage"
   ],

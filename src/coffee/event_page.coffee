@@ -3,7 +3,7 @@ class EventPageController
   constructor: (@dropboxChrome) ->
     chrome.browserAction.onClicked.addListener => @onBrowserAction()
     chrome.contextMenus.onClicked.addListener (data) => @onContextMenu data
-    chrome.extension.onMessage.addListener => @onMessage
+    chrome.extension.onMessage.addListener @onMessage
     chrome.runtime.onInstalled.addListener =>
       @onInstall()
       @onStart()
@@ -29,6 +29,7 @@ class EventPageController
     @fileList.onStateChange.addListener (file) =>
       @onFileStateChange file
     @restoreFiles -> null
+    @url = ''
 
   # Called by Chrome when the user installs the extension.
   onInstall: ->
@@ -41,12 +42,28 @@ class EventPageController
     @dropboxChrome.client (client) =>
       @onDropboxAuthChange client
 
+  onMessage: (data, sender, sendResp) =>
+    if data.message == 'url'
+      console.log "onmessage: " + data.url
+      @url = data.url
+      console.log @
+      console.log @url
+      sendResp data
+    else if data.message == 'get_url'
+      sendResp (if @url then @url else "no url!")
+    else
+      sendResp "blah2"
+    @
+
+
   # Called by Chrome when the user clicks the browser action.
   onBrowserAction: ->
+    alert "hell"
     @dropboxChrome.client (client) ->
+      alert(client.isAuthenticated())
       if client.isAuthenticated()
         # Chrome did not show up the popup for some reason. Do it here.
-        chrome.tabs.create url: 'html/popup.html', active: true, pinned: false
+        chrome.tabs.create url: 'html/folder.html', active: true, pinned: false
 
       credentials = client.credentials()
       if credentials.authState
@@ -61,6 +78,7 @@ class EventPageController
 
   # Called by Chrome when the user clicks the extension's context menu item.
   onContextMenu: (clickData) ->
+    alert(clickData)
     url = null
     referrer = null
     if clickData.srcUrl or clickData.linkUrl
@@ -89,7 +107,7 @@ class EventPageController
     # Update the badge to reflect the current authentication state.
     if client.isAuthenticated()
       chrome.contextMenus.update 'download', enabled: true
-      chrome.browserAction.setPopup popup: 'html/popup.html'
+      chrome.browserAction.setPopup popup: 'html/folder.html'
       chrome.browserAction.setTitle title: "Signed in"
       chrome.browserAction.setBadgeText text: ''
     else
@@ -255,6 +273,7 @@ class EventPageController
 
 
 dropboxChrome = new Dropbox.Chrome(
-  key: 'fOAYMWHVRVA=|pHQC3wPkdQ718FleqazY8eZQmxyhJ5n4G5++PXDYBg==',
+#  key: 'fOAYMWHVRVA=|pHQC3wPkdQ718FleqazY8eZQmxyhJ5n4G5++PXDYBg==',
+    key: 'R2YCNxoMXkA=|M39vKykM9jldHMhhl6htUtXMdWhXocNYat2yvInXig==',
   sandbox: true)
 window.controller = new EventPageController dropboxChrome
