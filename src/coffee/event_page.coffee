@@ -50,9 +50,12 @@ class EventPageController
       console.log @url
       sendResp data
     else if data.message == 'get_url'
-      sendResp (if @url then @url else "no url!")
-    else
-      sendResp "blah2"
+      if @url
+        sendResp @url
+      else
+        # TODO: REQUEST URL
+        # chrome.extension.sendMessage
+        sendResp 'No URL!'
     @
 
 
@@ -76,9 +79,18 @@ class EventPageController
       client.authenticate (error) ->
         client.reset() if error
 
+  # Called when user selects a folder to save URL
+  saveURL: (url, newname, folderPath) ->
+    # TODO(sirrice): get actual referrer in contentscript
+    referrer = url
+    file = new DropshipFile url: url, newname: newname, folderPath: folderPath, headers: { Referer: referrer }
+    @downloadController.addFile file, =>
+      @fileList.addFile file, =>
+        chrome.extension.sendMessage notice: 'update_files'
+
+
   # Called by Chrome when the user clicks the extension's context menu item.
   onContextMenu: (clickData) ->
-    alert(clickData)
     url = null
     referrer = null
     if clickData.srcUrl or clickData.linkUrl

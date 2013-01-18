@@ -3,18 +3,48 @@ class FoldersView
     @$root = $ @root
     @$content = $ '#content', @$root
     @$folders_list = $ '#folders_list', @$root
+    @$rename = $ '#rename', @$root
+    @$rename.focus @onRenameFocus
+    @$rename.blur @onRenameBlur
+    @$rename.blur
     @$debug = $ '#debug', @$root
     chrome.extension.onMessage.addListener @onMessage
     @loadURL()
     @loadFolders()
     @
 
+  onRenameFocus: (ev) =>
+    if @$rename.val() == 'Set a new name'
+      @$rename.val ''
+
+  onRenameBlur: (ev) =>
+    if @$rename.val().trim() == ''
+      @$rename.val 'Set a new name'
+
+
+  urlToFileName: (url) ->
+    basename = url.split('#', 2)[0].split('?', 2)[0]
+    while basename.substring(basename.length - 1) == '/'
+      basename = basename.substring 0, basename.length - 1
+    basename.substring basename.lastIndexOf('/') + 1
+
+
   loadURL: ->
-    @getURL (url) => @$content.text url
+    @getURL (url) =>
+      @$content.text url
+      @$rename.val @urlToFileName(url)
 
   getURL: (cb) ->
     chrome.runtime.getBackgroundPage (eventPage) =>
       cb eventPage.controller.url
+
+  saveURL: (url, folderPath) ->
+    chrome.runtime.getBackgroundPage (eventPage) =>
+      newname = if @$rename.val() == 'Set a new name' then @urlToFileName(url) else @$rename.val()
+      newname = newname.trim()
+      newname = if newname == '' then @urlToFileName(url) else newname
+      eventPage.controller.saveURL url, newname, folderPath
+      @$content.text 'Got it.  Saving file to dropbox!'
 
 
 
@@ -59,10 +89,14 @@ class FoldersView
       @getURL (url) =>
         if (url)
           target_dir = stat.path
-          @debug 'downloading ' + url + ' to '+stat.path
+          @$content.text 'downloading ' + url + ' to '+stat.path
+          @saveURL url, target_dir
           # call dropboxChrome API to download
+          # edit dropshipfile.uploadBasename to start with stat.path
+          # that's it!
+
         else
-          @debug 'no url'
+          @$content.tex 'No url to save!'
 
 
     fName.click (ev) =>

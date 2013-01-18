@@ -13,8 +13,7 @@ class DropshipFile
   #   after the file's download starts
   # @option options {Dropbox.UploadCursor} uploadCursor the progress of this
   #   file's upload
-  # @option options {String} dropboxPath the path of this file, relative to the
-  #   application's Dropbox folder
+  # @option options {String} dropboxPath the absolute path of this file
   # @option options {Number} state file's progress in the download / upload
   #   process
   # @option options {String} errorText user-friendly message describing the
@@ -23,6 +22,8 @@ class DropshipFile
     @url = options.url
     @httpMethod = options.httpMethod or 'GET'
     @headers = options.headers or {}
+    @newname = options.newname or null
+    @folderPath = options.folderPath or '/'
     @dropboxPath = options.dropboxPath or null
     @startedAt = options.startedAt or Date.now()
     @uid = options.uid or DropshipFile.randomUid()
@@ -102,10 +103,12 @@ class DropshipFile
   # @return {String} the name used when uploading this file to Dropbox
   #   URL fragment
   uploadBasename: ->
+    return @folderPath + '/' + @newname if @newname
     basename = @url.split('#', 2)[0].split('?', 2)[0]
     while basename.substring(basename.length - 1) == '/'
       basename = basename.substring 0, basename.length - 1
-    basename.substring basename.lastIndexOf('/') + 1
+    basename = basename.substring basename.lastIndexOf('/') + 1
+    @folderPath + '/' + basename
 
   # Called while the file is downloading.
   #
